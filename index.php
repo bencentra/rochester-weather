@@ -50,7 +50,6 @@ foreach ($result as $day) {
             margin: auto;
         }
     </style>
-    <script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
     <script>
         // Temperature data
         var data = <?php echo json_encode($data); ?>;
