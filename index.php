@@ -45,8 +45,8 @@ foreach ($result as $day) {
         
         #mycanvas {
             display: block;
-            width: 960px;
-            height: 480px;
+            width: 720px;
+            height: 520px;
             margin: auto;
         }
     </style>
@@ -68,11 +68,19 @@ foreach ($result as $day) {
             var startX = (width - (data.length)*2) / 2;
             var startY = (height - baseline);
             var scaleX = 2;
-            var scaleY = 3;
+            var scaleY = 2; //3
+            var interval = 20;
+            
+            var centerX = width/2;
+            var centerY = height/2;
             
             var currentMonth = "";
             var oddMonth = true;
+            var monthCount = 0;
             
+            // Translate to the center of the canvas
+            ctx.translate(centerX - 100, centerY);
+
             // Draw a line
             function drawLine(x1, y1, x2, y2) {
                 ctx.lineWidth = 1;
@@ -85,11 +93,81 @@ foreach ($result as $day) {
             // Draw a point
             function drawPoint(x, y) {
                 ctx.fillRect(x-1, y-1, 2, 2);
-                //ctx.beginPath();
-                //ctx.arc(x, y, 2, 0, 2*Math.PI);
-                //ctx.fill();
             }
             
+            function degToRad(deg) {
+                return deg * (Math.PI/180);   
+            }
+            
+            // Loop through each data point and draw the lines
+            var r = 0;
+            for (var i = 0; i < data.length; i++) {
+                // Calculate the rotation
+                ctx.rotate(degToRad(-r));
+                r = (i / data.length) * 360; 
+                
+                // Draw the background
+                if (data[i]["month"] != currentMonth) {
+                    currentMonth = data[i]["month"];
+                    oddMonth = !oddMonth;
+                    monthCount++;
+                    ctx.strokeStyle = "#BBBBBB";
+                    ctx.rotate(degToRad(r));
+                    drawLine(0, 0, 0, interval * 12);
+                    ctx.rotate(degToRad(-r));
+                    ctx.font = "14px Calibri";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    var rot = (monthCount / 12) * 360 - (360/12)/2;
+                    ctx.rotate(degToRad(rot));
+                    ctx.fillText(currentMonth.substr(0, 3), 0, -245);
+                    ctx.rotate(degToRad(-rot));
+                }
+                if (oddMonth) {
+                   
+                }
+                
+                // Properly rotate the canvas
+                ctx.rotate(degToRad(r));
+                
+                // Average High
+                ctx.fillStyle = "red";
+                drawPoint(0, (-Number(data[i]["average_high"]) - interval) * scaleY);
+                
+                // Mean
+                ctx.fillStyle = "black";
+                drawPoint(0, (-Number(data[i]["mean"]) - interval) * scaleY);
+                //drawPoint(0, -100);
+                
+                // Average Low
+                ctx.fillStyle = "blue";
+                drawPoint(0, (-Number(data[i]["average_low"]) - interval) * scaleY);
+                
+                // Record High
+                ctx.fillStyle = "red";
+                drawPoint(0, (-Number(data[i]["record_high"]) - interval) * scaleY);
+                
+                // Record Low
+                ctx.fillStyle = "blue";
+                drawPoint(0, (-Number(data[i]["record_low"]) - interval) * scaleY);
+                
+            }
+            
+            // Draw the grid
+            ctx.fillStyle = "black";
+            ctx.strokeStyle = "#BBBBBB";
+            for (var i = 1; i < 8; i++) {
+                if (i < 7) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, i * interval * scaleY, 0, degToRad(360));
+                    ctx.stroke();
+                }
+                ctx.font = "14px Calibri";
+                ctx.textAlign = "right";
+                ctx.fillText(""+ (i - 2) * interval, -5, - (i-1) * interval * scaleY);
+            }
+            
+            /*
             // Loop through each data point and draw the lines
             for (var i = 0; i < data.length; i++) {
                 var x = startX + i * scaleX;
@@ -151,13 +229,13 @@ foreach ($result as $day) {
             ctx.fillText("Temperature (F)", -height/2 , 50);
             ctx.rotate(-3 * (Math.PI / 2));
             ctx.fillText("Month", width/2, height - 15);
-            
+            */
         });
         
     </script>
 </head>
 <body>
-    <h1 class="center">Rochester Average Temperatures</h1>
-    <canvas id="mycanvas" width="960" height="480"></canvas>
+    <h3 class="center">Rochester Average Temperatures</h3>
+    <canvas id="mycanvas" width="720" height="520"></canvas>
 </body>
 </html>
