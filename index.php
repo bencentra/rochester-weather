@@ -43,69 +43,110 @@ foreach ($result as $day) {
             text-align: center;
         }
         
-        #mycanvas {
+        canvas {
             display: block;
-            width: 720px;
-            height: 520px;
+            width: 950px;
+            height: 550px;
             margin: auto;
         }
     </style>
+</head>
+<body>
+    <h1 class="center">Rochester's Temperatures</h1>
+    <p class="center">Average/record temperature data for Rochester, NY. Temperature data from <a href="http://www.weather.com/weather/wxclimatology/monthly/graph/USNY1232">weather.com</a>.</p>
+    <hr/>
+    <h3 class="center">Line Graph</h3>
+    <canvas id="linearcanvas" width="950" height="550"></canvas>
+    <hr/>
+    <h3 class="center">Circle Graph</h3>
+    <canvas id="circlecanvas" width="950" height="550"></canvas>
+    <hr/>
+    <p class="center">Made by <a href="http://bencentra.wordpress.com">Ben Centra</a>.</p>
     <script>
         // Temperature data
         var data = <?php echo json_encode($data); ?>;
         //console.log(data);
         
-        // Document ready
-        document.addEventListener("DOMContentLoaded", function() {
-            
-            // Setup the canvas
-            var c = document.getElementById("mycanvas");
-            var ctx = c.getContext("2d");
-            
+        // Convert between degrees and radians
+        function degToRad(deg) {
+            return deg * (Math.PI/180);   
+        }
+        
+        // Draw a line
+        function drawLine(ctx, x1, y1, x2, y2) {
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();   
+        }
+
+        // Draw a point
+        function drawPoint(ctx, x, y) {
+            ctx.fillRect(x-1, y-1, 2, 2);
+        }
+
+        // Draw the legend
+        function drawLegend(ctx, x, y) {
+            // Heading
+            ctx.fillStyle = "black";
+            ctx.font = "18px Calibri";
+            ctx.textAlign = "left";
+            ctx.fillText("Legend:", x, y);
+            // Record High
+            ctx.font = "14px Calibri";
+            ctx.fillStyle = "red";
+            ctx.fillRect(x, y + 20, 10, 10);
+            ctx.fillStyle = "black";
+            ctx.fillText("Record High", x + 20, y + 30);
+            // Average High
+            ctx.fillStyle = "orange";
+            ctx.fillRect(x, y + 40, 10, 10);
+            ctx.fillStyle = "black";
+            ctx.fillText("Average High", x + 20, y + 50);
+            // Mean
+            ctx.fillStyle = "black";
+            ctx.fillRect(x, y + 60, 10, 10);
+            ctx.fillStyle = "black";
+            ctx.fillText("Mean", x + 20, y + 70);
+            // Average Low
+            ctx.fillStyle = "green";
+            ctx.fillRect(x, y + 80, 10, 10);
+            ctx.fillStyle = "black";
+            ctx.fillText("Average Low", x + 20, y + 90);
+            // Record Low     
+            ctx.fillStyle = "blue";
+            ctx.fillRect(x, y + 100, 10, 10);
+            ctx.fillStyle = "black";
+            ctx.fillText("Average Low", x + 20, y + 110);
+        }
+
+        // Draw the circle graph
+        function drawCircleGraph(c, ctx) {
             var width = Number(c.getAttribute("width"));
             var height = Number(c.getAttribute("height"));
             var baseline = 150;
-            var startX = (width - (data.length)*2) / 2;
+            var startX = (width - (data.length)*2) / 2 - 40;
             var startY = (height - baseline);
             var scaleX = 2;
-            var scaleY = 2; //3
+            var scaleY = 2;
             var interval = 20;
-            
             var centerX = width/2;
             var centerY = height/2;
-            
             var currentMonth = "";
             var oddMonth = true;
             var monthCount = 0;
-            
-            // Translate to the center of the canvas
-            ctx.translate(centerX - 100, centerY);
 
-            // Draw a line
-            function drawLine(x1, y1, x2, y2) {
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();   
-            }
-            
-            // Draw a point
-            function drawPoint(x, y) {
-                ctx.fillRect(x-1, y-1, 2, 2);
-            }
-            
-            function degToRad(deg) {
-                return deg * (Math.PI/180);   
-            }
-            
+            // Translate to the center of the canvas
+            ctx.translate(centerX - 100, centerY + 15);
+
             // Loop through each data point and draw the lines
             var r = 0;
             for (var i = 0; i < data.length; i++) {
                 // Calculate the rotation
                 ctx.rotate(degToRad(-r));
                 r = (i / data.length) * 360; 
-                
+
                 // Draw the background
                 if (data[i]["month"] != currentMonth) {
                     currentMonth = data[i]["month"];
@@ -113,7 +154,7 @@ foreach ($result as $day) {
                     monthCount++;
                     ctx.strokeStyle = "#BBBBBB";
                     ctx.rotate(degToRad(r));
-                    drawLine(0, 0, 0, interval * 12);
+                    drawLine(ctx, 0, 0, 0, interval * 12);
                     ctx.rotate(degToRad(-r));
                     ctx.font = "14px Calibri";
                     ctx.fillStyle = "black";
@@ -124,35 +165,38 @@ foreach ($result as $day) {
                     ctx.rotate(degToRad(-rot));
                 }
                 if (oddMonth) {
-                   
+
                 }
-                
+
                 // Properly rotate the canvas
                 ctx.rotate(degToRad(r));
-                
+
                 // Average High
-                ctx.fillStyle = "red";
-                drawPoint(0, (-Number(data[i]["average_high"]) - interval) * scaleY);
-                
+                ctx.fillStyle = "orange";
+                drawPoint(ctx, 0, (-Number(data[i]["average_high"]) - interval) * scaleY);
+
                 // Mean
                 ctx.fillStyle = "black";
-                drawPoint(0, (-Number(data[i]["mean"]) - interval) * scaleY);
+                drawPoint(ctx, 0, (-Number(data[i]["mean"]) - interval) * scaleY);
                 //drawPoint(0, -100);
-                
+
                 // Average Low
-                ctx.fillStyle = "blue";
-                drawPoint(0, (-Number(data[i]["average_low"]) - interval) * scaleY);
-                
+                ctx.fillStyle = "green";
+                drawPoint(ctx, 0, (-Number(data[i]["average_low"]) - interval) * scaleY);
+
                 // Record High
                 ctx.fillStyle = "red";
-                drawPoint(0, (-Number(data[i]["record_high"]) - interval) * scaleY);
-                
+                drawPoint(ctx, 0, (-Number(data[i]["record_high"]) - interval) * scaleY);
+
                 // Record Low
                 ctx.fillStyle = "blue";
-                drawPoint(0, (-Number(data[i]["record_low"]) - interval) * scaleY);
-                
+                drawPoint(ctx, 0, (-Number(data[i]["record_low"]) - interval) * scaleY);
+
             }
-            
+
+            // Reset the rotation
+            ctx.rotate(degToRad((1 / data.length) * 360));
+
             // Draw the grid
             ctx.fillStyle = "black";
             ctx.strokeStyle = "#BBBBBB";
@@ -166,13 +210,38 @@ foreach ($result as $day) {
                 ctx.textAlign = "right";
                 ctx.fillText(""+ (i - 2) * interval, -5, - (i-1) * interval * scaleY);
             }
-            
-            /*
+
+            // Reset the center
+            ctx.translate(-centerX + 100, -centerY);
+
+            // Draw the heading
+            ctx.font = "14px Calibri";
+            ctx.textAlign = "right";
+            ctx.fillText("Temperature (F)", centerX - 60, 10);
+
+            drawLegend(ctx, centerX + centerX/2, 50);
+        }
+
+        // Draw the line graph
+        function drawLinearGraph(c, ctx) {
+            var width = Number(c.getAttribute("width"));
+            var height = Number(c.getAttribute("height"));
+            var baseline = 150;
+            var startX = (width - (data.length)*2) / 2 - 40;
+            var startY = (height - baseline);
+            var scaleX = 2;
+            var scaleY = 3;
+            var interval = 20;
+            var centerX = width/2;
+            var centerY = height/2;
+            var currentMonth = "";
+            var oddMonth = true;
+            var monthCount = 0;
+
             // Loop through each data point and draw the lines
             for (var i = 0; i < data.length; i++) {
                 var x = startX + i * scaleX;
-                //console.log(data[i]);
-                
+
                 // Draw the background
                 if (data[i]["month"] != currentMonth) {
                     currentMonth = data[i]["month"];
@@ -184,58 +253,69 @@ foreach ($result as $day) {
                 }
                 if (oddMonth) {
                     ctx.strokeStyle = "#CCCCCC";
-                    drawLine(x, 0, x, height - 67);
+                    drawLine(ctx, x, 0, x, height - 67);
                 }
-                
+
                 // Avgerage High
                 ctx.fillStyle = "red";
-                drawPoint(x, startY - Number(data[i]["average_high"]) * scaleY);
-                //console.log("X: "+x+", Y:"+(startY - Number(data[i]["average_high"]) * scaleY));
-                
+                drawPoint(ctx, x, startY - Number(data[i]["average_high"]) * scaleY);
+
                 // Mean
                 ctx.fillStyle = "black";
-                drawPoint(x, startY - Number(data[i]["mean"]) * scaleY);
-                
+                drawPoint(ctx, x, startY - Number(data[i]["mean"]) * scaleY);
+
                 // Average Low
                 ctx.fillStyle = "blue";
-                drawPoint(x, startY - Number(data[i]["average_low"]) * scaleY);
-                
+                drawPoint(ctx, x, startY - Number(data[i]["average_low"]) * scaleY);
+
                 // Record High
                 ctx.fillStyle = "red";
-                drawPoint(x, startY - Number(data[i]["record_high"]) * scaleY);
-                
+                drawPoint(ctx, x, startY - Number(data[i]["record_high"]) * scaleY);
+
                 // Record Low
                 ctx.fillStyle = "blue";
-                drawPoint(x, startY - Number(data[i]["record_low"]) * scaleY);
+                drawPoint(ctx, x, startY - Number(data[i]["record_low"]) * scaleY);
             }
-            
+
             // Draw the grid
             ctx.strokeStyle = "#222222";
             ctx.font = "14px Calibri";
             ctx.fillStyle = "black";
-            drawLine(startX - scaleX, height, startX - scaleX, 0);
-            for (var i = -1; i < 6; i++) {
+            drawLine(ctx, startX - scaleX, height, startX - scaleX, 0);
+            for (var i = -1; i < 7; i++) {
                 var interval = 20;
                 var aX = i * interval;
-                drawLine(startX - scaleX, startY - (aX * scaleY), width - startX, startY - (aX * scaleY));
+                drawLine(ctx, startX - scaleX, startY - (aX * scaleY), width - startX - 80, startY - (aX * scaleY));
                 ctx.fillText(""+aX, startX - 25, startY - (aX * scaleY));
             }
-            
+
             // Label the axis
             ctx.font = "18px Calibri";
             ctx.fillStyle = "black";
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = "center";
-            ctx.fillText("Temperature (F)", -height/2 , 50);
+            ctx.fillText("Temperature (F)", -height/2 , 25);
             ctx.rotate(-3 * (Math.PI / 2));
             ctx.fillText("Month", width/2, height - 15);
-            */
+
+            drawLegend(ctx, 825, 100);
+
+        }
+
+        // Document ready
+        document.addEventListener("DOMContentLoaded", function() {
+
+            var linearCanvas = document.getElementById("linearcanvas");
+            var linearCtx = linearCanvas.getContext("2d");
+            var circleCanvas = document.getElementById("circlecanvas");
+            var circleCtx = circleCanvas.getContext("2d");
+            
+            drawCircleGraph(circleCanvas, circleCtx);
+            drawLinearGraph(linearCanvas, linearCtx);
+            
         });
+            
         
     </script>
-</head>
-<body>
-    <h3 class="center">Rochester Average Temperatures</h3>
-    <canvas id="mycanvas" width="720" height="520"></canvas>
 </body>
 </html>
