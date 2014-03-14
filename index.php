@@ -1,39 +1,7 @@
-<?php
-// Database vars
-$dbuser = "weatherman";
-$dbpass = "9BEyLF9a3cbVhrKj";
-$dbhost = "localhost";
-$dbname = "data_visualization";
-$pdo = null;
-
-// Connect to the database
-try {
-    $pdo = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);
-}
-catch (PDOException $e) {
-    die($e->getMessage());
-}
-
-// Get the weather data
-$sql = "SELECT month, day, average_high, mean, average_low, record_high, record_low FROM rochester_weather";
-$stmt = $pdo->query($sql);
-$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Format the data
-$data = array();
-foreach ($result as $day) {
-    $arr = array();
-    foreach($day as $key => $val) {
-        $arr[$key] = explode("°", utf8_encode($val))[0];  
-    }
-    $data[] = $arr;
-}
-
-?>
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>Rochester Average Temperatures</title>
+    <title>Rochester Temperatures</title>
     <style>
         * {
             font-family: Calibri, Arial, sans-serif;   
@@ -52,7 +20,7 @@ foreach ($result as $day) {
     </style>
 </head>
 <body>
-    <h1 class="center">Rochester's Temperatures</h1>
+    <h1 class="center">Rochester Temperatures</h1>
     <p class="center">Average/record temperature data for Rochester, NY. Temperature data from <a href="http://www.weather.com/weather/wxclimatology/monthly/graph/USNY1232">weather.com</a>.</p>
     <hr/>
     <h3 class="center">Line Graph</h3>
@@ -61,11 +29,9 @@ foreach ($result as $day) {
     <h3 class="center">Circle Graph</h3>
     <canvas id="circlecanvas" width="950" height="550"></canvas>
     <hr/>
-    <p class="center">Made by <a href="http://bencentra.wordpress.com">Ben Centra</a>.</p>
+    <p class="center">Made by <a href="http://bencentra.wordpress.com">Ben Centra</a> for Data Visualization (IGME-590-01).</p>
     <script>
-        // Temperature data
-        var data = <?php echo json_encode($data); ?>;
-        //console.log(data);
+        var data = [];
         
         // Convert between degrees and radians
         function degToRad(deg) {
@@ -118,7 +84,7 @@ foreach ($result as $day) {
             ctx.fillStyle = "blue";
             ctx.fillRect(x, y + 100, 10, 10);
             ctx.fillStyle = "black";
-            ctx.fillText("Average Low", x + 20, y + 110);
+            ctx.fillText("Record Low", x + 20, y + 110);
         }
 
         // Draw the circle graph
@@ -163,9 +129,6 @@ foreach ($result as $day) {
                     ctx.rotate(degToRad(rot));
                     ctx.fillText(currentMonth.substr(0, 3), 0, -245);
                     ctx.rotate(degToRad(-rot));
-                }
-                if (oddMonth) {
-
                 }
 
                 // Properly rotate the canvas
@@ -257,7 +220,7 @@ foreach ($result as $day) {
                 }
 
                 // Avgerage High
-                ctx.fillStyle = "red";
+                ctx.fillStyle = "orange";
                 drawPoint(ctx, x, startY - Number(data[i]["average_high"]) * scaleY);
 
                 // Mean
@@ -265,7 +228,7 @@ foreach ($result as $day) {
                 drawPoint(ctx, x, startY - Number(data[i]["mean"]) * scaleY);
 
                 // Average Low
-                ctx.fillStyle = "blue";
+                ctx.fillStyle = "green";
                 drawPoint(ctx, x, startY - Number(data[i]["average_low"]) * scaleY);
 
                 // Record High
@@ -310,9 +273,17 @@ foreach ($result as $day) {
             var circleCanvas = document.getElementById("circlecanvas");
             var circleCtx = circleCanvas.getContext("2d");
             
-            drawCircleGraph(circleCanvas, circleCtx);
-            drawLinearGraph(linearCanvas, linearCtx);
-            
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET", "rochester_weather.json", true);
+            xmlhttp.responseType = "JSON";
+            xmlhttp.onload = function() {
+                if (xmlhttp.readyState == "4" && xmlhttp.status == "200") {
+                    data = JSON.parse(xmlhttp.responseText);
+                    drawCircleGraph(circleCanvas, circleCtx);
+                    drawLinearGraph(linearCanvas, linearCtx);   
+                }
+            };
+            xmlhttp.send();
         });
             
         
