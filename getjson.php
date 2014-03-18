@@ -1,10 +1,6 @@
 <?php
-// Database vars
-$dbuser = "weatherman";
-$dbpass = "9BEyLF9a3cbVhrKj";
-$dbhost = "localhost";
-$dbname = "data_visualization";
-$pdo = null;
+// Include the database connections vars
+require_once("dbInfo.inc");
 
 // Connect to the database
 try {
